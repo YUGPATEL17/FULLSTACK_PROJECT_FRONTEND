@@ -1,23 +1,34 @@
 import { createRouter, createWebHistory } from "vue-router";
+
+// We will use CoursePage as both Home and Lessons page
 import CoursePage from "../pages/CoursePage.vue";
 import CartPage from "../pages/CartPage.vue";
-import CourseDetails from "../pages/CourseDetails.vue";
+import OrdersPage from "../pages/OrdersPage.vue";
 
 const routes = [
   {
     path: "/",
-    name: "Home",
-    component: CoursePage,
+    name: "home",
+    component: CoursePage, // Home shows lessons
+  },
+  {
+    path: "/courses",
+    name: "courses",
+    component: CoursePage, // Lessons button also shows same page
   },
   {
     path: "/cart",
-    name: "Cart",
+    name: "cart",
     component: CartPage,
   },
   {
-    path: "/course/:id",
-    name: "CourseDetails",
-    component: CourseDetails,
+    path: "/orders",
+    name: "orders",
+    component: OrdersPage,
+  },
+  {
+    path: "/:pathMatch(.*)*",
+    redirect: "/",
   },
 ];
 

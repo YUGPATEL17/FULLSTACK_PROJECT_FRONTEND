@@ -57,7 +57,7 @@ const coursesData = [
     price: 28,
     spacesLeft: 5,
     image:
-      "https://images.pexels.com/photos/1181263/pexels-photo-1181263.jpeg?auto=compress&cs=tinysrgb&w=800",
+      "https://images.pexels.com/photos/4144096/pexels-photo-4144096.jpeg?auto=compress&cs=tinysrgb&w=800",
     learn: [
       "Basics of programming",
       "Build a mini game",
