@@ -1,145 +1,187 @@
 <template>
   <main class="cart-page">
-    <h1>Your Cart</h1>
+    <!-- Header -->
+    <section class="cart-header">
+      <h1>Your Basket</h1>
+      <p>Review your lessons, then enter your details to place the order.</p>
+    </section>
 
-    <div v-if="cart.length === 0" class="empty">
-      <p>Your cart is empty.</p>
-    </div>
+    <section class="cart-layout">
+      <!-- LEFT: Selected lessons -->
+      <section class="cart-panel">
+        <h2>Selected lessons</h2>
 
-    <div v-else class="cart-content">
-      <!-- Cart items -->
-      <div class="cart-list">
-        <div
-          class="cart-item"
-          v-for="item in cart"
-          :key="item.id"
-        >
-          <img :src="item.lesson.image" class="item-image" />
+        <div v-if="cart.length === 0" class="empty-cart">
+          <p>Your basket is empty.</p>
+          <RouterLink to="/" class="btn-link">Browse lessons</RouterLink>
+        </div>
 
-          <div class="item-info">
-            <h2>{{ item.lesson.title }}</h2>
-            <p>£ {{ item.lesson.price.toFixed(2) }}</p>
+        <table v-else class="cart-table">
+          <thead>
+            <tr>
+              <th>Lesson</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Subtotal</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in cart" :key="item.id">
+              <td class="lesson-cell">
+                <img
+                  :src="item.lesson.image"
+                  :alt="item.lesson.title"
+                  class="lesson-thumb"
+                />
+                <div>
+                  <div class="lesson-title">{{ item.lesson.title }}</div>
+                  <div class="lesson-location">📍 {{ item.lesson.location }}</div>
+                </div>
+              </td>
+              <td>£ {{ item.lesson.price.toFixed(2) }}</td>
+              <td>
+                <div class="qty-controls">
+                  <button class="qty-btn" @click="decreaseQuantity(item)">
+                    –
+                  </button>
+                  <span class="qty-value">{{ item.quantity }}</span>
+                  <button class="qty-btn" @click="increaseQuantity(item)">
+                    +
+                  </button>
+                </div>
+              </td>
+              <td>£ {{ (item.lesson.price * item.quantity).toFixed(2) }}</td>
+              <td>
+                <button class="remove-btn" @click="removeItem(item)">
+                  Remove
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-            <div class="qty-row">
-              <span>Qty:</span>
-              <button class="qty-btn" @click="decreaseQuantity(item)">-</button>
-              <span class="qty-number">{{ item.quantity }}</span>
-              <button class="qty-btn" @click="increaseQuantity(item)">+</button>
-            </div>
+        <div v-if="cart.length > 0" class="cart-footer">
+          <div class="cart-total">
+            <strong>Total:</strong> £ {{ cartTotal.toFixed(2) }}
+          </div>
+          <button class="btn-outline" @click="clearCart">Clear basket</button>
+        </div>
+      </section>
+
+      <!-- RIGHT: Checkout form -->
+      <section class="checkout-panel">
+        <h2>Checkout</h2>
+        <p class="checkout-subtitle">
+          Enter your details to place the order.
+        </p>
+
+        <form @submit.prevent="checkout" class="checkout-form">
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input
+              id="name"
+              v-model="name"
+              type="text"
+              class="input"
+              @blur="validateName"
+            />
+            <p v-if="errors.name" class="error-text">{{ errors.name }}</p>
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone</label>
+            <input
+              id="phone"
+              v-model="phone"
+              type="text"
+              class="input"
+              @blur="validatePhone"
+            />
+            <p v-if="errors.phone" class="error-text">{{ errors.phone }}</p>
+            <p class="help-text">
+              We'll use your phone number only to contact you about your booking.
+            </p>
           </div>
 
           <button
-            class="remove-btn"
-            @click="removeItem(item)"
+            type="submit"
+            class="btn-primary"
+            :disabled="!isFormValid || isSubmitting"
           >
-            Remove
+            <span v-if="isSubmitting">Placing order...</span>
+            <span v-else>Checkout</span>
           </button>
-        </div>
 
-        <div class="cart-total">
-          <h3>Total: £ {{ totalPrice.toFixed(2) }}</h3>
-        </div>
-      </div>
-
-      <!-- Customer details + checkout -->
-      <div class="checkout-panel">
-        <h2>Customer details</h2>
-
-        <div class="field-row">
-          <label for="name">Full name</label>
-          <input
-            id="name"
-            v-model="customerName"
-            type="text"
-            placeholder="Enter your name"
-            @input="clearMessages"
-          />
-          <p v-if="customerName && !nameValid" class="error">
-            Name should contain letters and spaces only.
+          <p v-if="submitStatus" class="status-text">
+            {{ submitStatus }}
           </p>
-        </div>
-
-        <div class="field-row">
-          <label for="phone">Phone number</label>
-          <input
-            id="phone"
-            v-model="customerPhone"
-            type="tel"
-            placeholder="Enter your phone number"
-            @input="clearMessages"
-          />
-          <p v-if="customerPhone && !phoneValid" class="error">
-            Phone should contain numbers only.
-          </p>
-        </div>
-
-        <!-- extra messages -->
-        <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-        <p v-if="successMessage" class="success">{{ successMessage }}</p>
-
-        <!-- CHECKOUT BUTTON: always visible, disabled until valid -->
-        <button
-          class="checkout-btn"
-          :disabled="!canCheckout"
-          @click="checkout"
-        >
-          Place order
-        </button>
-
-        <p class="checkout-note">
-          This is a demo project — no real payments are processed.
-        </p>
-      </div>
-    </div>
+        </form>
+      </section>
+    </section>
   </main>
 </template>
 
 <script>
-const NAME_REGEX = /^[A-Za-z ]+$/;   // letters + spaces only
-const PHONE_REGEX = /^[0-9]+$/;      // numbers only
-
 export default {
   name: "CartPage",
 
   data() {
     return {
-      cart: JSON.parse(localStorage.getItem("cart") || "[]"),
-      customerName: "",
-      customerPhone: "",
-      errorMessage: "",
-      successMessage: "",
+      cart: [],
+      name: "",
+      phone: "",
+      errors: {
+        name: "",
+        phone: "",
+      },
+      isSubmitting: false,
+      submitStatus: "",
     };
   },
 
   computed: {
-    totalPrice() {
+    cartTotal() {
       return this.cart.reduce(
         (sum, item) => sum + item.lesson.price * item.quantity,
         0
       );
     },
 
-    // validation
-    nameValid() {
-      const value = this.customerName.trim();
-      return value.length > 0 && NAME_REGEX.test(value);
+    isNameValid() {
+      return this.name.trim().length >= 2;
     },
 
-    phoneValid() {
-      const value = this.customerPhone.trim();
-      return value.length > 0 && PHONE_REGEX.test(value);
+    isPhoneValid() {
+      const digits = this.phone.replace(/\D/g, "");
+      return digits.length >= 10 && digits.length <= 11;
     },
 
-    // button enabled only when cart has items AND both fields valid
-    canCheckout() {
-      return this.cart.length > 0 && this.nameValid && this.phoneValid;
+    isFormValid() {
+      return this.cart.length > 0 && this.isNameValid && this.isPhoneValid;
     },
   },
 
   methods: {
+    loadCart() {
+      this.cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    },
+
     saveCart() {
       localStorage.setItem("cart", JSON.stringify(this.cart));
       window.dispatchEvent(new Event("cart-updated"));
+    },
+
+    increaseQuantity(item) {
+      item.quantity += 1;
+      this.saveCart();
+    },
+
+    decreaseQuantity(item) {
+      if (item.quantity > 1) {
+        item.quantity -= 1;
+        this.saveCart();
+      }
     },
 
     removeItem(item) {
@@ -147,252 +189,326 @@ export default {
       this.saveCart();
     },
 
-    increaseQuantity(item) {
-      const target = this.cart.find((c) => c.id === item.id);
-      if (!target) return;
-      target.quantity += 1;
+    clearCart() {
+      this.cart = [];
       this.saveCart();
     },
 
-    decreaseQuantity(item) {
-      const index = this.cart.findIndex((c) => c.id === item.id);
-      if (index === -1) return;
-
-      const target = this.cart[index];
-      if (target.quantity > 1) {
-        target.quantity -= 1;
+    validateName() {
+      if (!this.isNameValid) {
+        this.errors.name = "Please enter at least 2 characters.";
       } else {
-        this.cart.splice(index, 1);
+        this.errors.name = "";
       }
-
-      this.saveCart();
     },
 
-    clearMessages() {
-      this.errorMessage = "";
-      this.successMessage = "";
+    validatePhone() {
+      if (!this.isPhoneValid) {
+        this.errors.phone = "Please enter a valid 10–11 digit phone number.";
+      } else {
+        this.errors.phone = "";
+      }
     },
 
-    checkout() {
-      this.errorMessage = "";
-      this.successMessage = "";
+    async checkout() {
+      // Front-end validation
+      this.validateName();
+      this.validatePhone();
 
-      // extra safety – should already be handled by disabled button
-      if (!this.nameValid || !this.phoneValid) {
-        this.errorMessage =
-          "Please enter a valid name (letters and spaces only) and phone number (numbers only).";
+      if (!this.isFormValid) {
+        this.submitStatus =
+          "Please fix the errors above and make sure your basket is not empty.";
         return;
       }
 
-      const cleanName = this.customerName.trim();
-      const total = this.totalPrice.toFixed(2);
+      this.isSubmitting = true;
+      this.submitStatus = "";
 
-      // ✅ REQUIRED MESSAGE
-      const msg = `Thank you, ${cleanName} – your order has been placed! Total: £${total}.`;
+      try {
+        const orderPayload = {
+          name: this.name.trim(),
+          phone: this.phone.trim(),
+          total: this.cartTotal,
+          items: this.cart.map((item) => ({
+            id: item.lesson.id,
+            title: item.lesson.title,
+            quantity: item.quantity,
+            price: item.lesson.price,
+          })),
+        };
 
-      // show browser alert
-      alert(msg);
+        const response = await fetch("http://localhost:4000/api/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(orderPayload),
+        });
 
-      // also show on the page
-      this.successMessage = msg;
+        if (!response.ok) {
+          throw new Error("Server returned an error");
+        }
 
-      // ✅ OPTIONAL: clear cart + fields (nice for demo)
-      this.cart = [];
-      this.customerName = "";
-      this.customerPhone = "";
-      this.saveCart();
+        const data = await response.json();
+        console.log("Order response:", data);
+
+        alert(`Thank you, ${this.name.trim()} – your order has been placed!`);
+
+        // Clear cart + form
+        this.clearCart();
+        this.name = "";
+        this.phone = "";
+        this.submitStatus = "";
+      } catch (err) {
+        console.error("Checkout error:", err);
+        this.submitStatus =
+          "There was a problem placing your order. Please try again.";
+      } finally {
+        this.isSubmitting = false;
+      }
     },
+  },
+
+  mounted() {
+    this.loadCart();
+    window.addEventListener("cart-updated", this.loadCart);
+  },
+
+  beforeUnmount() {
+    window.removeEventListener("cart-updated", this.loadCart);
   },
 };
 </script>
 
 <style scoped>
 .cart-page {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 20px 60px;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui;
+  padding: 60px 40px 80px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
+    sans-serif;
 }
 
-h1 {
-  font-size: 34px;
+.cart-header h1 {
+  font-size: 40px;
   font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.cart-header p {
+  font-size: 16px;
+  color: #555;
+  margin-bottom: 32px;
+}
+
+.cart-layout {
+  display: grid;
+  grid-template-columns: 2fr 1.3fr;
+  gap: 30px;
+}
+
+.cart-panel,
+.checkout-panel {
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+  padding: 24px 26px 28px;
+}
+
+.cart-panel h2,
+.checkout-panel h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.checkout-subtitle {
+  font-size: 14px;
+  color: #666;
   margin-bottom: 20px;
 }
 
-.empty {
-  margin-top: 40px;
-  font-size: 18px;
-  color: #777;
+.empty-cart {
+  text-align: center;
+  padding: 40px 0 10px;
+  font-size: 14px;
+  color: #666;
 }
 
-.cart-content {
-  display: grid;
-  grid-template-columns: 2fr 1.2fr;
-  gap: 24px;
+.btn-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #1c7c3c;
+  text-decoration: none;
 }
 
-.cart-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.btn-link:hover {
+  text-decoration: underline;
 }
 
-.cart-item {
-  display: flex;
-  align-items: center;
-  background: #fff;
-  padding: 18px;
-  border-radius: 16px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
-}
-
-.item-image {
-  width: 120px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 12px;
-  margin-right: 20px;
-}
-
-.item-info h2 {
-  font-size: 18px;
-  margin-bottom: 6px;
-}
-
-.qty-row {
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.cart-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 14px;
 }
 
-.qty-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  border: none;
-  background: #eeeeee;
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
+.cart-table th {
+  text-align: left;
+  padding-bottom: 10px;
+  color: #777;
+  font-weight: 500;
+  border-bottom: 1px solid #eee;
 }
 
-.qty-btn:hover {
-  background: #dddddd;
+.cart-table td {
+  padding: 14px 4px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f3f3f3;
 }
 
-.qty-number {
-  min-width: 20px;
-  text-align: center;
+.lesson-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.remove-btn {
-  margin-left: auto;
-  background: #ff4d4d;
-  color: white;
-  border: none;
-  padding: 10px 14px;
+.lesson-thumb {
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
-  cursor: pointer;
-}
-.remove-btn:hover {
-  background: #e33b3b;
+  object-fit: cover;
 }
 
-.cart-total {
-  margin-top: 4px;
-  padding: 16px 18px;
-  background: #f7f7f7;
-  border-radius: 12px;
-  text-align: right;
-  font-size: 18px;
+.lesson-title {
   font-weight: 600;
 }
 
-/* Checkout panel */
-.checkout-panel {
-  background: #ffffff;
-  padding: 20px 22px 22px;
-  border-radius: 16px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
-  align-self: flex-start;
-}
-
-.checkout-panel h2 {
-  font-size: 20px;
-  margin-bottom: 12px;
-}
-
-.field-row {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.field-row label {
-  font-size: 13px;
-  color: #555;
-}
-
-.field-row input {
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid #ddd;
-  font-size: 14px;
-}
-
-.field-row input:focus {
-  outline: none;
-  border-color: #1c7c3c;
-}
-
-.error {
-  color: #d93025;
-  font-size: 13px;
-  margin-top: 4px;
-}
-
-.success {
-  color: #1c7c3c;
-  font-size: 13px;
-  margin-top: 4px;
-}
-
-.checkout-btn {
-  width: 100%;
-  margin-top: 10px;
-  background: #1c7c3c;
-  color: #ffffff;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-/* always visible, but disabled by CSS when not allowed */
-.checkout-btn:disabled {
-  background: #c9c9c9;
-  cursor: not-allowed;
-}
-
-.checkout-btn:not(:disabled):hover {
-  background: #155a2f;
-}
-
-.checkout-note {
-  margin-top: 8px;
+.lesson-location {
   font-size: 12px;
   color: #777;
 }
 
-@media (max-width: 800px) {
-  .cart-content {
+.qty-controls {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #ddd;
+  overflow: hidden;
+}
+
+.qty-btn {
+  border: none;
+  background: #f5f5f5;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.qty-value {
+  padding: 4px 10px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.remove-btn {
+  border: none;
+  background: none;
+  color: #c0392b;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.cart-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.cart-total {
+  font-size: 16px;
+}
+
+.btn-outline {
+  border-radius: 999px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.input {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.help-text {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+}
+
+.error-text {
+  font-size: 12px;
+  color: #c0392b;
+  margin-top: 4px;
+}
+
+.btn-primary {
+  margin-top: 8px;
+  border-radius: 999px;
+  border: none;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #1c7c3c;
+  color: #fff;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.btn-primary:disabled {
+  background: #cfd8dc;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.status-text {
+  font-size: 13px;
+  margin-top: 6px;
+  color: #555;
+}
+
+@media (max-width: 900px) {
+  .cart-layout {
     grid-template-columns: 1fr;
+  }
+
+  .cart-page {
+    padding: 32px 20px 60px;
   }
 }
 </style>

@@ -37,13 +37,13 @@
       </div>
     </section>
 
-    <!-- Loading / error -->
-    <p v-if="loading" class="results-text">Loading lessons...</p>
-    <p v-else-if="error" class="results-text" style="color: red;">
-      {{ error }}
+    <!-- Status / results text -->
+    <p v-if="isLoading" class="status-text">Loading lessons...</p>
+
+    <p v-else-if="loadError" class="status-text status-error">
+      {{ loadError }}
     </p>
 
-    <!-- Results info -->
     <p v-else class="results-text">
       Showing {{ filteredAndSortedLessons.length }} lesson<span
         v-if="filteredAndSortedLessons.length !== 1"
@@ -52,7 +52,10 @@
     </p>
 
     <!-- Lessons grid -->
-    <section v-if="!loading && !error" class="lessons-grid">
+    <section
+      v-if="!isLoading && !loadError"
+      class="lessons-grid"
+    >
       <article
         v-for="lesson in filteredAndSortedLessons"
         :key="lesson.id"
@@ -88,7 +91,7 @@
               v-for="n in 5"
               :key="n"
               class="star"
-              :class="{ active: n <= lesson.rating }"
+              :class="{ active: n <= (lesson.rating || 0) }"
             >
               ★
             </span>
@@ -136,14 +139,15 @@ export default {
 
   data() {
     return {
+      lessons: [],
       cart: [],
+
       searchTerm: "",
       sortField: "title", // title | location | price | spaces
-      sortOrder: "asc",   // asc | desc
+      sortOrder: "asc", // asc | desc
 
-      lessons: [],        // <-- now starts empty, will come from backend
-      loading: true,
-      error: null,
+      isLoading: true,
+      loadError: "",
     };
   },
 
@@ -151,20 +155,20 @@ export default {
     filteredAndSortedLessons() {
       const term = this.searchTerm.toLowerCase();
 
-      // 1) FILTER – match title + description + location
+      // Filter
       let list = this.lessons.filter((lesson) => {
         if (!term) return true;
         const text = (
-          lesson.title +
+          (lesson.title || "") +
           " " +
-          lesson.description +
+          (lesson.description || "") +
           " " +
-          lesson.location
+          (lesson.location || "")
         ).toLowerCase();
         return text.includes(term);
       });
 
-      // 2) SORT – by selected field + order
+      // Sort
       const field = this.sortField;
       const order = this.sortOrder === "asc" ? 1 : -1;
 
@@ -172,11 +176,11 @@ export default {
         let cmp = 0;
 
         if (field === "title") {
-          cmp = a.title.localeCompare(b.title);
+          cmp = (a.title || "").localeCompare(b.title || "");
         } else if (field === "location") {
-          cmp = a.location.localeCompare(b.location);
+          cmp = (a.location || "").localeCompare(b.location || "");
         } else if (field === "price") {
-          cmp = a.price - b.price;
+          cmp = (a.price || 0) - (b.price || 0);
         } else if (field === "spaces") {
           cmp = this.spacesLeft(a) - this.spacesLeft(b);
         }
@@ -189,23 +193,55 @@ export default {
   },
 
   methods: {
-    // --- NEW: fetch lessons from backend ---
+    // -------- LOAD LESSONS (tries /api/courses and /courses) --------
     async fetchLessons() {
-      try {
-        const res = await fetch("http://localhost:4000/api/courses");
-        if (!res.ok) {
-          throw new Error("Failed to fetch lessons");
+      this.isLoading = true;
+      this.loadError = "";
+      this.lessons = [];
+
+      const urls = [
+        "http://localhost:4000/api/courses",
+        "http://localhost:4000/courses",
+      ];
+
+      for (const url of urls) {
+        try {
+          console.log("🔎 Trying lessons URL:", url);
+          const res = await fetch(url);
+
+          if (!res.ok) {
+            console.warn("❌ Lessons request failed:", url, res.status);
+            continue;
+          }
+
+          const data = await res.json();
+          console.log("✅ Raw lessons data from", url, data);
+
+          if (Array.isArray(data)) {
+            this.lessons = data;
+          } else if (Array.isArray(data.courses)) {
+            this.lessons = data.courses;
+          } else {
+            console.warn("Unexpected lessons data shape from", url, data);
+            continue;
+          }
+
+          // we got valid lessons, stop trying further URLs
+          break;
+        } catch (err) {
+          console.error("Error fetching from", url, err);
         }
-        const data = await res.json();
-        this.lessons = data;
-      } catch (err) {
-        console.error(err);
-        this.error = "Could not load lessons. Please try again later.";
-      } finally {
-        this.loading = false;
       }
+
+      if (!this.lessons.length) {
+        this.loadError =
+          "There was a problem loading lessons from the server. Please check that your backend is running on port 4000.";
+      }
+
+      this.isLoading = false;
     },
 
+    // -------- CART HELPERS --------
     loadCart() {
       this.cart = JSON.parse(localStorage.getItem("cart") || "[]");
     },
@@ -220,7 +256,7 @@ export default {
     },
 
     spacesLeft(lesson) {
-      return lesson.spaces - this.quantityInCart(lesson);
+      return (lesson.spaces || 0) - this.quantityInCart(lesson);
     },
 
     canAddToCart(lesson) {
@@ -248,11 +284,9 @@ export default {
   },
 
   mounted() {
+    this.fetchLessons();
     this.loadCart();
     window.addEventListener("cart-updated", this.loadCart);
-
-    // NEW: load lessons from backend when page mounts
-    this.fetchLessons();
   },
 
   beforeUnmount() {
@@ -262,7 +296,6 @@ export default {
 </script>
 
 <style scoped>
-/* your existing styles – unchanged */
 .course-page {
   max-width: 1200px;
   margin: 0 auto;
@@ -296,6 +329,16 @@ export default {
   font-size: 13px;
   color: #777;
   margin-bottom: 20px;
+}
+
+.status-text {
+  font-size: 13px;
+  color: #777;
+  margin-bottom: 20px;
+}
+
+.status-error {
+  color: #c0392b;
 }
 
 .search-input {
