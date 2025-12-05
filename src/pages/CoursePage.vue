@@ -45,19 +45,13 @@
     </p>
 
     <p v-else class="results-text">
-      Showing {{ filteredAndSortedLessons.length }} lesson<span
-        v-if="filteredAndSortedLessons.length !== 1"
-        >s</span
-      >
+      Showing {{ lessons.length }} lesson<span v-if="lessons.length !== 1">s</span>
     </p>
 
     <!-- Lessons grid -->
-    <section
-      v-if="!isLoading && !loadError"
-      class="lessons-grid"
-    >
+    <section v-if="!isLoading && !loadError" class="lessons-grid">
       <article
-        v-for="lesson in filteredAndSortedLessons"
+        v-for="lesson in lessons"
         :key="lesson.id"
         class="lesson-card"
       >
@@ -148,97 +142,58 @@ export default {
 
       isLoading: true,
       loadError: "",
+      fetchTimeout: null, // for small debounce
     };
   },
 
-  computed: {
-    filteredAndSortedLessons() {
-      const term = this.searchTerm.toLowerCase();
-
-      // Filter
-      let list = this.lessons.filter((lesson) => {
-        if (!term) return true;
-        const text = (
-          (lesson.title || "") +
-          " " +
-          (lesson.description || "") +
-          " " +
-          (lesson.location || "")
-        ).toLowerCase();
-        return text.includes(term);
-      });
-
-      // Sort
-      const field = this.sortField;
-      const order = this.sortOrder === "asc" ? 1 : -1;
-
-      list = list.slice().sort((a, b) => {
-        let cmp = 0;
-
-        if (field === "title") {
-          cmp = (a.title || "").localeCompare(b.title || "");
-        } else if (field === "location") {
-          cmp = (a.location || "").localeCompare(b.location || "");
-        } else if (field === "price") {
-          cmp = (a.price || 0) - (b.price || 0);
-        } else if (field === "spaces") {
-          cmp = this.spacesLeft(a) - this.spacesLeft(b);
-        }
-
-        return cmp * order;
-      });
-
-      return list;
-    },
-  },
-
   methods: {
-    // -------- LOAD LESSONS (tries /api/courses and /courses) --------
+    // -------- LOAD LESSONS FROM BACKEND (with search + sort) --------
     async fetchLessons() {
-      this.isLoading = true;
-      this.loadError = "";
-      this.lessons = [];
+      if (this.fetchTimeout) {
+        clearTimeout(this.fetchTimeout);
+      }
 
-      const urls = [
-        "http://localhost:4000/api/courses",
-        "http://localhost:4000/courses",
-      ];
+      // small debounce so it doesn't fire on every single key stroke instantly
+      this.fetchTimeout = setTimeout(async () => {
+        this.isLoading = true;
+        this.loadError = "";
+        this.lessons = [];
 
-      for (const url of urls) {
         try {
-          console.log("🔎 Trying lessons URL:", url);
-          const res = await fetch(url);
+          const params = new URLSearchParams();
 
+          if (this.searchTerm.trim() !== "") {
+            params.append("q", this.searchTerm.trim());
+          }
+          params.append("sortField", this.sortField);
+          params.append("sortOrder", this.sortOrder);
+
+          const url = `http://localhost:4000/api/courses?${params.toString()}`;
+          console.log("🔎 Requesting lessons:", url);
+
+          const res = await fetch(url);
           if (!res.ok) {
-            console.warn("❌ Lessons request failed:", url, res.status);
-            continue;
+            throw new Error(`Request failed with status ${res.status}`);
           }
 
           const data = await res.json();
-          console.log("✅ Raw lessons data from", url, data);
+          console.log("✅ Lessons response:", data);
 
-          if (Array.isArray(data)) {
-            this.lessons = data;
-          } else if (Array.isArray(data.courses)) {
+          if (Array.isArray(data.courses)) {
             this.lessons = data.courses;
+          } else if (Array.isArray(data)) {
+            this.lessons = data;
           } else {
-            console.warn("Unexpected lessons data shape from", url, data);
-            continue;
+            throw new Error("Unexpected lessons data shape");
           }
-
-          // we got valid lessons, stop trying further URLs
-          break;
         } catch (err) {
-          console.error("Error fetching from", url, err);
+          console.error("Error fetching lessons:", err);
+          this.loadError =
+            "There was a problem loading lessons from the server. Please check that your backend is running on port 4000.";
+        } finally {
+          this.isLoading = false;
         }
-      }
-
-      if (!this.lessons.length) {
-        this.loadError =
-          "There was a problem loading lessons from the server. Please check that your backend is running on port 4000.";
-      }
-
-      this.isLoading = false;
+      }, 250); // 0.25s debounce
     },
 
     // -------- CART HELPERS --------
@@ -283,6 +238,18 @@ export default {
     },
   },
 
+  watch: {
+    searchTerm() {
+      this.fetchLessons();
+    },
+    sortField() {
+      this.fetchLessons();
+    },
+    sortOrder() {
+      this.fetchLessons();
+    },
+  },
+
   mounted() {
     this.fetchLessons();
     this.loadCart();
@@ -291,11 +258,16 @@ export default {
 
   beforeUnmount() {
     window.removeEventListener("cart-updated", this.loadCart);
+    if (this.fetchTimeout) {
+      clearTimeout(this.fetchTimeout);
+    }
   },
 };
 </script>
 
 <style scoped>
+/* === this is exactly your original styling === */
+
 .course-page {
   max-width: 1200px;
   margin: 0 auto;
