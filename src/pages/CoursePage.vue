@@ -128,6 +128,10 @@
 </template>
 
 <script>
+// Use env variable so it works on localhost AND Render
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
 export default {
   name: "CoursePage",
 
@@ -168,7 +172,7 @@ export default {
           params.append("sortField", this.sortField);
           params.append("sortOrder", this.sortOrder);
 
-          const url = `http://localhost:4000/api/courses?${params.toString()}`;
+          const url = `${API_BASE}/api/courses?${params.toString()}`;
           console.log("🔎 Requesting lessons:", url);
 
           const res = await fetch(url);
@@ -189,7 +193,7 @@ export default {
         } catch (err) {
           console.error("Error fetching lessons:", err);
           this.loadError =
-            "There was a problem loading lessons from the server. Please check that your backend is running on port 4000.";
+            "There was a problem loading lessons from the server. Please check your backend URL.";
         } finally {
           this.isLoading = false;
         }
