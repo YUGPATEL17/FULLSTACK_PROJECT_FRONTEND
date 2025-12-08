@@ -1,0 +1,81 @@
+[{
+  "_id": {
+    "$oid": "6936bbdad0bde5bcf4f84671"
+  },
+  "name": "Test User",
+  "phone": "07123456789",
+  "items": [
+    {
+      "id": 1,
+      "title": "Art & Painting",
+      "quantity": 1,
+      "price": 20
+    },
+    {
+      "id": 2,
+      "title": "Music & Guitar Lessons",
+      "quantity": 1,
+      "price": 10
+    }
+  ],
+  "total": 30,
+  "createdAt": {
+    "$date": "2025-12-08T11:51:54.948Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6936d7e864d6f4fccc35967b"
+  },
+  "name": "Atharva",
+  "phone": "9876543210",
+  "items": [
+    {
+      "id": 1,
+      "title": "Art & Painting",
+      "quantity": 2,
+      "price": 20
+    },
+    {
+      "id": 4,
+      "title": "Coding for Kids",
+      "quantity": 1,
+      "price": 28
+    }
+  ],
+  "total": 68,
+  "createdAt": {
+    "$date": "2025-12-08T13:51:36.219Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6936d80364d6f4fccc35967c"
+  },
+  "name": "JEBIN",
+  "phone": "91234455678",
+  "items": [
+    {
+      "id": 8,
+      "title": "Dance Workshop",
+      "quantity": 1,
+      "price": 19
+    },
+    {
+      "id": 3,
+      "title": "Drama & Theatre",
+      "quantity": 1,
+      "price": 22
+    },
+    {
+      "id": 2,
+      "title": "Music & Guitar Lessons",
+      "quantity": 1,
+      "price": 18
+    }
+  ],
+  "total": 59,
+  "createdAt": {
+    "$date": "2025-12-08T13:52:03.443Z"
+  }
+}]
