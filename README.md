@@ -167,7 +167,7 @@ These help examiners understand and test the project easily.
 ## 👨‍💻 Author
 
 **Yug Patel**  
-BSc (Hons) Computer Science  
+BSc  Computer Science  
 Middlesex University London  
 
 ---
