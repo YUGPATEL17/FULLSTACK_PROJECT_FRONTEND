@@ -1,0 +1,142 @@
+{
+	"info": {
+		"_postman_id": "44b404f4-a5af-465e-a481-b750ef73908f",
+		"name": "After School API",
+		"description": "Backend API for After School Club project.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "50651988",
+		"_collection_link": "https://patelyug1795-3506090.postman.co/workspace/82a4eed6-b427-4d15-81ba-e104de9750bc/collection/50651988-44b404f4-a5af-465e-a481-b750ef73908f?action=share&source=collection_link&creator=50651988"
+	},
+	"item": [
+		{
+			"name": "GET / – Health",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://after-school-backend-ri4h.onrender.com",
+					"protocol": "https",
+					"host": [
+						"after-school-backend-ri4h",
+						"onrender",
+						"com"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/courses – Get lessons",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://after-school-backend-ri4h.onrender.com/api/courses",
+					"protocol": "https",
+					"host": [
+						"after-school-backend-ri4h",
+						"onrender",
+						"com"
+					],
+					"path": [
+						"api",
+						"courses"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/courses – search & sort example",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://after-school-backend-ri4h.onrender.com/api/courses?q=club&sortField=price&sortOrder=asc",
+					"protocol": "https",
+					"host": [
+						"after-school-backend-ri4h",
+						"onrender",
+						"com"
+					],
+					"path": [
+						"api",
+						"courses"
+					],
+					"query": [
+						{
+							"key": "q",
+							"value": "club"
+						},
+						{
+							"key": "sortField",
+							"value": "price"
+						},
+						{
+							"key": "sortOrder",
+							"value": "asc"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST /api/orders – Create order",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "https://after-school-backend-ri4h.onrender.com/api/orders",
+					"protocol": "https",
+					"host": [
+						"after-school-backend-ri4h",
+						"onrender",
+						"com"
+					],
+					"path": [
+						"api",
+						"orders"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/orders – List orders",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://after-school-backend-ri4h.onrender.com/api/orders",
+					"protocol": "https",
+					"host": [
+						"after-school-backend-ri4h",
+						"onrender",
+						"com"
+					],
+					"path": [
+						"api",
+						"orders"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
