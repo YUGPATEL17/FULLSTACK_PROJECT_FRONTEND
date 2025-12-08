@@ -1,6 +1,8 @@
 // frontend/src/apiClient.js
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+// Read base URL from env, fallback to localhost for safety
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 console.log("🔌 API Base URL:", API_BASE);
 

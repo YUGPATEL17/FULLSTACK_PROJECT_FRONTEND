@@ -123,6 +123,8 @@
 </template>
 
 <script>
+import apiClient from "../apiClient";
+
 export default {
   name: "CartPage",
 
@@ -237,19 +239,7 @@ export default {
           })),
         };
 
-        const response = await fetch("http://localhost:4000/api/orders", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(orderPayload),
-        });
-
-        if (!response.ok) {
-          throw new Error("Server returned an error");
-        }
-
-        const data = await response.json();
+        const data = await apiClient.post("/api/orders", orderPayload);
         console.log("Order response:", data);
 
         alert(`Thank you, ${this.name.trim()} – your order has been placed!`);

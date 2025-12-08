@@ -25,12 +25,12 @@
       <div v-else class="orders-list">
         <article
           v-for="order in orders"
-          :key="order.id"
+          :key="order._id || order.id"
           class="order-card"
         >
           <header class="order-header">
             <div>
-              <h2>Order #{{ order.id }}</h2>
+              <h2>Order #{{ order._id || order.id }}</h2>
               <p class="order-meta">
                 <span><strong>Name:</strong> {{ order.name }}</span>
                 <span><strong>Phone:</strong> {{ order.phone }}</span>
@@ -68,7 +68,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import apiClient from "../apiClient";
 
 export default {
   name: "OrdersPage",
@@ -84,9 +84,9 @@ export default {
       this.loading = true;
       this.error = false;
       try {
-        const res = await axios.get("http://localhost:4000/api/orders");
+        const data = await apiClient.get("/api/orders");
         // backend returns { orders: [...] }
-        this.orders = Array.isArray(res.data.orders) ? res.data.orders : [];
+        this.orders = Array.isArray(data.orders) ? data.orders : [];
         console.log("Loaded orders:", this.orders);
       } catch (err) {
         console.error("Error loading orders:", err);

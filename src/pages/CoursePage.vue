@@ -128,9 +128,7 @@
 </template>
 
 <script>
-// Use env variable so it works on localhost AND Render
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+import apiClient from "../apiClient";
 
 export default {
   name: "CoursePage",
@@ -172,15 +170,10 @@ export default {
           params.append("sortField", this.sortField);
           params.append("sortOrder", this.sortOrder);
 
-          const url = `${API_BASE}/api/courses?${params.toString()}`;
-          console.log("🔎 Requesting lessons:", url);
+          const path = `/api/courses?${params.toString()}`;
+          console.log("🔎 Requesting lessons:", path);
 
-          const res = await fetch(url);
-          if (!res.ok) {
-            throw new Error(`Request failed with status ${res.status}`);
-          }
-
-          const data = await res.json();
+          const data = await apiClient.get(path);
           console.log("✅ Lessons response:", data);
 
           if (Array.isArray(data.courses)) {
