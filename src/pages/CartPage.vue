@@ -150,13 +150,18 @@ export default {
       );
     },
 
+    // NAME: letters + spaces only, at least 2 characters
     isNameValid() {
-      return this.name.trim().length >= 2;
+      const trimmed = this.name.trim();
+      const nameRegex = /^[A-Za-z\s]+$/;
+      return trimmed.length >= 2 && nameRegex.test(trimmed);
     },
 
+    // PHONE: digits only, 10–11 digits
     isPhoneValid() {
-      const digits = this.phone.replace(/\D/g, "");
-      return digits.length >= 10 && digits.length <= 11;
+      const trimmed = this.phone.trim();
+      const phoneRegex = /^[0-9]{10,11}$/;
+      return phoneRegex.test(trimmed);
     },
 
     isFormValid() {
@@ -197,16 +202,22 @@ export default {
     },
 
     validateName() {
-      if (!this.isNameValid) {
-        this.errors.name = "Please enter at least 2 characters.";
+      if (!this.name.trim()) {
+        this.errors.name = "Name is required.";
+      } else if (!this.isNameValid) {
+        this.errors.name =
+          "Name must be at least 2 characters and contain letters only.";
       } else {
         this.errors.name = "";
       }
     },
 
     validatePhone() {
-      if (!this.isPhoneValid) {
-        this.errors.phone = "Please enter a valid 10–11 digit phone number.";
+      if (!this.phone.trim()) {
+        this.errors.phone = "Phone is required.";
+      } else if (!this.isPhoneValid) {
+        this.errors.phone =
+          "Phone must be 10–11 digits, numbers only.";
       } else {
         this.errors.phone = "";
       }
